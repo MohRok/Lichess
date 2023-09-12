@@ -66,6 +66,9 @@ class Graph(Component):
             value is 100 and the maximum value is 1000. By default this is
             300.
 
+        - editSelection (boolean; optional):
+            Enables moving selections.
+
         - editable (boolean; optional):
             We can edit titles, move annotations, etc - sets all pieces of
             `edits` unless a separate `edits` config item overrides
@@ -263,6 +266,10 @@ class Graph(Component):
         - prop_name (string; optional):
             Holds which property is loading.
 
+    - mathjax (boolean; default False):
+        If True, loads mathjax v3 (tex-svg) into the page and use it in
+        the graph.
+
     - prependData (list | dict; optional):
         Data that should be prepended to existing traces. Has the form
         `[updateData, traceIndices, maxPoints]`, where `updateData` is an
@@ -309,6 +316,11 @@ class Graph(Component):
     - style (dict; optional):
         Generic style overrides on the plot div."""
 
+    _children_props = []
+    _base_nodes = ["children"]
+    _namespace = "dash_core_components"
+    _type = "Graph"
+
     @_explicitize_args
     def __init__(
         self,
@@ -326,6 +338,7 @@ class Graph(Component):
         figure=Component.UNDEFINED,
         style=Component.UNDEFINED,
         className=Component.UNDEFINED,
+        mathjax=Component.UNDEFINED,
         animate=Component.UNDEFINED,
         animation_options=Component.UNDEFINED,
         config=Component.UNDEFINED,
@@ -345,6 +358,7 @@ class Graph(Component):
             "figure",
             "hoverData",
             "loading_state",
+            "mathjax",
             "prependData",
             "relayoutData",
             "responsive",
@@ -352,8 +366,6 @@ class Graph(Component):
             "selectedData",
             "style",
         ]
-        self._type = "Graph"
-        self._namespace = "dash_core_components"
         self._valid_wildcard_attributes = []
         self.available_properties = [
             "id",
@@ -368,6 +380,7 @@ class Graph(Component):
             "figure",
             "hoverData",
             "loading_state",
+            "mathjax",
             "prependData",
             "relayoutData",
             "responsive",
@@ -378,9 +391,7 @@ class Graph(Component):
         self.available_wildcard_properties = []
         _explicit_args = kwargs.pop("_explicit_args")
         _locals = locals()
-        _locals.update(kwargs)  # For wildcard attrs
-        args = {k: _locals[k] for k in _explicit_args if k != "children"}
-        for k in []:
-            if k not in args:
-                raise TypeError("Required argument `" + k + "` was not specified.")
+        _locals.update(kwargs)  # For wildcard attrs and excess named props
+        args = {k: _locals[k] for k in _explicit_args}
+
         super(Graph, self).__init__(**args)
