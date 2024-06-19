@@ -1,18 +1,26 @@
 import xml.etree.ElementTree as ET
 
-def extract_and_write_hierarchy(xml_file, output_file):
+def extract_and_write_hierarchy_with_descriptions(xml_file, output_file):
     unique_elements = set()  # Menge für eindeutige Elemente
     lines = []
 
     def recursive_extract(element, depth=0):
-        if element.tag not in unique_elements:
-            unique_elements.add(element.tag)
-            lines.append("  " * depth + element.tag)
+        tag = element.tag
+        text = (element.text or '').strip()
+        description = f" - {text}" if text else ""
+        
+        if tag not in unique_elements or description:  # Hinzufügen, wenn Tag neu ist oder es eine Beschreibung gibt
+            unique_elements.add(tag)
+            lines.append("  " * depth + tag + description)
+        
         child_elements = list(element)
-        for child in child_elements:
+        for i, child in enumerate(child_elements):
+            if i > 0 and child_elements[i-1].tag.endswith('_list'):
+                lines.append("")  # Leere Zeile zwischen Listen
             recursive_extract(child, depth + 1)
-        if element.tag.endswith('_list'):
-            lines.append("")  # Leere Zeile nach Listen
+        
+        if tag.endswith('_list') and child_elements:
+            lines.append("")  # Leere Zeile nach Listen mit Inhalten
 
     tree = ET.parse(xml_file)
     root = tree.getroot()
@@ -20,7 +28,7 @@ def extract_and_write_hierarchy(xml_file, output_file):
     recursive_extract(root)
     
     # Entferne die letzte leere Zeile, falls vorhanden
-    if lines[-1] == "":
+    if lines and lines[-1] == "":
         lines = lines[:-1]
     
     with open(output_file, 'w') as f:
@@ -28,10 +36,10 @@ def extract_and_write_hierarchy(xml_file, output_file):
             f.write(line + "\n")
 
 # Beispiel XML-Datei und Ausgabe-Datei
-xml_file = '/mnt/data/input.xml'  # Ersetzen Sie dies durch den Pfad zu Ihrer XML-Datei
-output_file = '/mnt/data/output.txt'
+xml_file = 'input.xml'  # Ersetzen Sie dies durch den Pfad zu Ihrer XML-Datei
+output_file = 'output.txt'  # Ersetzen Sie dies durch den Pfad zur Ausgabedatei
 
 # Hierarchie der XML-Tags extrahieren und in eine Textdatei schreiben
-extract_and_write_hierarchy(xml_file, output_file)
+extract_and_write_hierarchy_with_descriptions(xml_file, output_file)
 
-print(f"Die XML-Hierarchie wurde in {output_file} geschrieben.")
+print(f"Die XML-Hierarchie mit Beschreibungen wurde in {output_file} geschrieben.")
