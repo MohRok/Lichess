@@ -102,38 +102,51 @@ By following these steps, you should be able to accurately mark the highest `NAR
 
 
 VBA:
-Sub MarkHighestNARTVersion()
+Sub UpdateHighestNART()
     Dim db As DAO.Database
     Dim rs As DAO.Recordset
-    Dim maxVersion As Integer
-    Dim nartValue As Integer
+    Dim rsMax As DAO.Recordset
+    Dim strSQL As String
     
+    ' Set database object
     Set db = CurrentDb()
     
-    ' Find the maximum version number
-    Set rs = db.OpenRecordset("SELECT MAX(Val(Right([NART_f], 2))) AS MaxVersion FROM hlftbl_NART_Selection")
-    If Not rs.EOF Then
-        maxVersion = rs!MaxVersion
-    End If
-    rs.Close
+    ' Step 1: Create Temp_Base_Version table
+    strSQL = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, Left([NART_f], Len([NART_f]) - 3) AS BaseNART " & _
+             "INTO Temp_Base_Version FROM hlftbl_NART_Selection;"
+    db.Execute strSQL, dbFailOnError
     
-    ' Update the Highest_NART field
-    Set rs = db.OpenRecordset("SELECT * FROM hlftbl_NART_Selection")
-    Do While Not rs.EOF
-        nartValue = Val(Right(rs!NART_f, 2))
-        If nartValue = maxVersion Then
-            rs.Edit
-            rs!Highest_NART = True
-            rs.Update
-        Else
-            rs.Edit
-            rs!Highest_NART = False
-            rs.Update
-        End If
-        rs.MoveNext
-    Loop
-    rs.Close
+    ' Step 2: Create Temp_Max_Version_Per_Base table
+    strSQL = "SELECT BaseNART, MAX(VersionNumber) AS MaxVersion INTO Temp_Max_Version_Per_Base " & _
+             "FROM Temp_Base_Version GROUP BY BaseNART;"
+    db.Execute strSQL, dbFailOnError
+    
+    ' Step 3: Update Highest_NART field
+    strSQL = "UPDATE hlftbl_NART_Selection AS h " & _
+             "INNER JOIN (Temp_Base_Version AS bv INNER JOIN Temp_Max_Version_Per_Base AS mv " & _
+             "ON (bv.BaseNART = mv.BaseNART) AND (bv.VersionNumber = mv.MaxVersion)) " & _
+             "ON h.NART_f = bv.NART_f SET h.Highest_NART = True;"
+    db.Execute strSQL, dbFailOnError
+    
+    ' Step 4: Reset Highest_NART for non-highest records
+    strSQL = "UPDATE hlftbl_NART_Selection " & _
+             "SET Highest_NART = False " & _
+             "WHERE Highest_NART IS NULL OR Highest_NART = True AND NART_f NOT IN " & _
+             "(SELECT h.NART_f FROM hlftbl_NART_Selection AS h " & _
+             "INNER JOIN (Temp_Base_Version AS bv INNER JOIN Temp_Max_Version_Per_Base AS mv " & _
+             "ON (bv.BaseNART = mv.BaseNART) AND (bv.VersionNumber = mv.MaxVersion)) " & _
+             "ON h.NART_f = bv.NART_f);"
+    db.Execute strSQL, dbFailOnError
+    
+    ' Clean up: Drop temporary tables
+    db.Execute "DROP TABLE Temp_Base_Version;", dbFailOnError
+    db.Execute "DROP TABLE Temp_Max_Version_Per_Base;", dbFailOnError
+    
+    ' Clean up objects
     Set rs = Nothing
+    Set rsMax = Nothing
     Set db = Nothing
+    
+    MsgBox "Updated Highest NART successfully.", vbInformation
 End Sub
 
