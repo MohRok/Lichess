@@ -153,3 +153,50 @@ Sub UpdateHighestNART()
     MsgBox "Updated Highest NART successfully.", vbInformation
 End Sub
 
+
+
+VBA2
+Sub UpdateHighestNART()
+    On Error GoTo ErrorHandler
+    Dim conn As Object
+    Dim sql As String
+    
+    ' Create a new ADO connection
+    Set conn = CreateObject("ADODB.Connection")
+    conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
+    
+    ' Step 1: Reset all Highest_NART to False
+    sql = "UPDATE hlftbl_NART_Selection SET Highest_NART = False;"
+    conn.Execute sql
+    
+    ' Step 2: Set Highest_NART to True for the latest version
+    sql = "UPDATE hlftbl_NART_Selection AS h " & _
+          "INNER JOIN (SELECT Left([NART_f], Len([NART_f]) - 3) AS BaseNART, MAX(Val(Right([NART_f], 2))) AS MaxVersion " & _
+                      "FROM hlftbl_NART_Selection " & _
+                      "GROUP BY Left([NART_f], Len([NART_f]) - 3)) AS subquery " & _
+          "ON Left(h.[NART_f], Len(h.[NART_f]) - 3) = subquery.BaseNART " & _
+          "AND Val(Right(h.[NART_f], 2)) = subquery.MaxVersion " & _
+          "SET h.Highest_NART = True;"
+    conn.Execute sql
+    
+    ' Close the connection
+    conn.Close
+    Set conn = Nothing
+    
+    MsgBox "Updated Highest NART successfully.", vbInformation
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description, vbCritical
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then ' If the connection is open
+            conn.Close
+        End If
+        Set conn = Nothing
+    End If
+End Sub
+
+
+
+
+
