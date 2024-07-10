@@ -96,3 +96,44 @@ Here’s how you can do it:
 6. **Run the query** to reset the `Highest_NART` field for non-highest versions.
 
 By following these steps, you should be able to accurately mark the highest `NART_f` versions in the `hlftbl_NART_Selection` table.
+
+
+
+
+
+VBA:
+Sub MarkHighestNARTVersion()
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim maxVersion As Integer
+    Dim nartValue As Integer
+    
+    Set db = CurrentDb()
+    
+    ' Find the maximum version number
+    Set rs = db.OpenRecordset("SELECT MAX(Val(Right([NART_f], 2))) AS MaxVersion FROM hlftbl_NART_Selection")
+    If Not rs.EOF Then
+        maxVersion = rs!MaxVersion
+    End If
+    rs.Close
+    
+    ' Update the Highest_NART field
+    Set rs = db.OpenRecordset("SELECT * FROM hlftbl_NART_Selection")
+    Do While Not rs.EOF
+        nartValue = Val(Right(rs!NART_f, 2))
+        If nartValue = maxVersion Then
+            rs.Edit
+            rs!Highest_NART = True
+            rs.Update
+        Else
+            rs.Edit
+            rs!Highest_NART = False
+            rs.Update
+        End If
+        rs.MoveNext
+    Loop
+    rs.Close
+    Set rs = Nothing
+    Set db = Nothing
+End Sub
+
