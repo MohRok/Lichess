@@ -1,0 +1,98 @@
+To select the latest version of each distinct `NART_f` value based on the last two digits and update the `Highest_NART` field, we need to approach the problem in a few distinct steps:
+
+1. Extract the base `NART_f` values and their versions.
+2. Identify the highest version for each `NART_f`.
+3. Update the `Highest_NART` field for those records identified in step 2.
+
+Here’s how you can do it:
+
+### Step 1: Extract Base `NART_f` and Version Number
+
+1. **Create a new query** to extract the base `NART_f` and version number.
+2. **Open your Access database**.
+3. **Go to the Queries section**.
+4. **Create a new query in Design View**.
+5. **Add the table `hlftbl_NART_Selection`**.
+6. **Switch to SQL View** by clicking on "SQL View" in the "View" dropdown.
+7. **Enter the following SQL code**:
+
+    ```sql
+    SELECT 
+        NART_f,
+        Val(Right([NART_f], 2)) AS VersionNumber,
+        Left([NART_f], Len([NART_f]) - 3) AS BaseNART
+    FROM 
+        hlftbl_NART_Selection;
+    ```
+
+8. **Save this query** with a name like `Query_Base_Version`.
+
+### Step 2: Identify the Highest Version for Each Base `NART_f`
+
+1. **Create another new query** to find the highest version for each base `NART_f`.
+2. **Add the query `Query_Base_Version`**.
+3. **Switch to SQL View**.
+4. **Enter the following SQL code**:
+
+    ```sql
+    SELECT 
+        BaseNART, 
+        MAX(VersionNumber) AS MaxVersion
+    FROM 
+        Query_Base_Version
+    GROUP BY 
+        BaseNART;
+    ```
+
+5. **Save this query** with a name like `Query_Max_Version_Per_Base`.
+
+### Step 3: Update the `Highest_NART` Field
+
+1. **Create a new update query**.
+2. **Add the table `hlftbl_NART_Selection`**.
+3. **Add the queries `Query_Base_Version` and `Query_Max_Version_Per_Base`** to the query design.
+4. **Switch to SQL View**.
+5. **Enter the following SQL code** to update the `Highest_NART` field:
+
+    ```sql
+    UPDATE 
+        hlftbl_NART_Selection AS h
+    INNER JOIN 
+        (Query_Base_Version AS bv 
+        INNER JOIN Query_Max_Version_Per_Base AS mv 
+        ON (bv.BaseNART = mv.BaseNART) AND (bv.VersionNumber = mv.MaxVersion)) 
+    ON h.NART_f = bv.NART_f
+    SET h.Highest_NART = True;
+    ```
+
+6. **Save this query** with a name like `Update_Highest_NART`.
+7. **Run the update query**:
+    - Locate the query in the Queries section.
+    - Double-click the query to run it. Confirm any prompts to update the records.
+
+### Additional Step: Reset `Highest_NART` for All Other Records
+
+1. **Create another update query** to reset the `Highest_NART` field for records that are not the highest version.
+2. **Add the table `hlftbl_NART_Selection`**.
+3. **Switch to SQL View**.
+4. **Enter the following SQL code**:
+
+    ```sql
+    UPDATE 
+        hlftbl_NART_Selection
+    SET 
+        Highest_NART = False
+    WHERE 
+        Highest_NART IS NULL OR Highest_NART = True AND NART_f NOT IN 
+        (SELECT NART_f 
+         FROM hlftbl_NART_Selection AS h 
+         INNER JOIN (Query_Base_Version AS bv 
+         INNER JOIN Query_Max_Version_Per_Base AS mv 
+         ON (bv.BaseNART = mv.BaseNART) AND (bv.VersionNumber = mv.MaxVersion)) 
+         ON h.NART_f = bv.NART_f);
+    ```
+
+5. **Save this query** with a name like `Reset_Highest_NART`.
+6. **Run the query** to reset the `Highest_NART` field for non-highest versions.
+
+By following these steps, you should be able to accurately mark the highest `NART_f` versions in the `hlftbl_NART_Selection` table.
