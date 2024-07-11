@@ -155,7 +155,7 @@ End Sub
 
 
 
-VBA JB"
+VBA JB2
 Sub UpdateHighestJB2()
     Dim conn As Object
     Dim sql As String
@@ -164,31 +164,33 @@ Sub UpdateHighestJB2()
     Set conn = CreateObject("ADODB.Connection")
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
     
-    ' Create Temp_Base_Version table
-    sql = "SELECT JB2, Val(Right([JB2], 2)) AS VersionNumber, Left([JB2], Len([JB2]) - 3) AS BaseJB2 INTO Temp_Base_Version FROM tbl_DELSPC;"
+    ' Create Temp_Base_JB2 table
+    sql = "SELECT JB2, Right([JB2], 2) AS VersionNumber, Left([JB2], IIf(InStr([JB2], '.') > 0, InStr([JB2], '.') - 1, Len([JB2]))) AS BaseJB2 " & _
+          "INTO Temp_Base_JB2 FROM tbl_DELSPC WHERE JB2 Is Not Null AND JB2 <> '' AND JB2 <> 'N.A.';"
     conn.Execute sql
     
-    ' Create Temp_Max_Version_Per_Base table
-    sql = "SELECT BaseJB2, MAX(VersionNumber) AS MaxVersion INTO Temp_Max_Version_Per_Base FROM Temp_Base_Version GROUP BY BaseJB2;"
+    ' Create Temp_Max_Version_Per_JB2 table
+    sql = "SELECT BaseJB2, MAX(VersionNumber) AS MaxVersion INTO Temp_Max_Version_Per_JB2 FROM Temp_Base_JB2 GROUP BY BaseJB2;"
     conn.Execute sql
     
     ' Reset Highest_JB2
-    sql = "UPDATE tbl_DELSPC SET Highest_JB2 = False;"
+    sql = "UPDATE tbl_DELSPC SET Highest_JB2 = False WHERE JB2 Is Not Null AND JB2 <> '' AND JB2 <> 'N.A.';"
     conn.Execute sql
     
     ' Update Highest_JB2 field
-    sql = "UPDATE tbl_DELSPC AS t " & _
-          "INNER JOIN (Temp_Base_Version AS bv " & _
-          "INNER JOIN Temp_Max_Version_Per_Base AS mv " & _
+    sql = "UPDATE tbl_DELSPC AS h " & _
+          "INNER JOIN (Temp_Base_JB2 AS bv " & _
+          "INNER JOIN Temp_Max_Version_Per_JB2 AS mv " & _
           "ON (bv.BaseJB2 = mv.BaseJB2) AND (bv.VersionNumber = mv.MaxVersion)) " & _
-          "ON t.JB2 = bv.JB2 " & _
-          "SET t.Highest_JB2 = True;"
+          "ON h.JB2 = bv.JB2 " & _
+          "SET h.Highest_JB2 = True " & _
+          "WHERE h.JB2 Is Not Null AND h.JB2 <> '' AND h.JB2 <> 'N.A.';"
     conn.Execute sql
     
     ' Drop temporary tables
-    sql = "DROP TABLE Temp_Base_Version;"
+    sql = "DROP TABLE Temp_Base_JB2;"
     conn.Execute sql
-    sql = "DROP TABLE Temp_Max_Version_Per_Base;"
+    sql = "DROP TABLE Temp_Max_Version_Per_JB2;"
     conn.Execute sql
     
     ' Close the connection
