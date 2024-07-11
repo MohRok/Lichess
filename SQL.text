@@ -200,11 +200,13 @@ End Sub
 
 VBA§:
 
+Option Compare Database
+
 Sub ExecuteSQLFromFile()
     Dim conn As Object
     Dim sqlFilePath As String
     Dim sql As String
-    
+
     ' Create a new ADO connection
     Set conn = CreateObject("ADODB.Connection")
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
@@ -212,16 +214,37 @@ Sub ExecuteSQLFromFile()
     ' Begin Transaction
     conn.BeginTrans
     
-    ' Step 1: Reset all Highest_NART to False
-    sqlFilePath = CurrentProject.Path & "\reset_highest_nart.sql"
+    ' Create Temp_Base_Version table
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Query_Base_Version.sql"
     sql = ReadFile(sqlFilePath)
     conn.Execute sql
     
-    ' Step 2: Set Highest_NART to True for the latest version
-    sqlFilePath = CurrentProject.Path & "\update_highest_nart.sql"
+    ' Create Temp_Max_Version_Per_Base table
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Query_Max_Version_Per_Base.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
+  
+    
+    ' Reset all Highest_NART to False
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Reset_Highest_NART.sql"
     sql = ReadFile(sqlFilePath)
     conn.Execute sql
     
+    ' Set Highest_NART to True for the latest version
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Update_Highest_NART.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
+    
+      
+    ' Drop temporary table Base
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Drop_Temp_Base_Version.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
+    
+    ' Drop temporary table Max
+    sqlFilePath = "C:\Users\dehmouu\Essity\TEAM-HM-GMI-PMO, Artworks & Packaging - Alexandria 2024\PackagingDB_Test-Version\DB_Mohamad\BackUp_dehtosi_240709_1116.accdb\Drop_Temp_Max_Version_per_Base.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
     ' Commit Transaction
     conn.CommitTrans
     
@@ -231,6 +254,8 @@ Sub ExecuteSQLFromFile()
     
     MsgBox "Updated Highest NART successfully.", vbInformation
     Exit Sub
+
+End Sub
 
 Function ReadFile(filePath As String) As String
     Dim fso As Object
@@ -245,3 +270,4 @@ Function ReadFile(filePath As String) As String
     
     ReadFile = text
 End Function
+
