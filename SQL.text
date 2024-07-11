@@ -198,5 +198,37 @@ End Sub
 
 
 
+VBA§:
 
+Sub ExecuteSQLFromFile()
+    Dim conn As Object
+    Dim sqlFilePath As String
+    Dim sql As String
+    
+    ' Create a new ADO connection
+    Set conn = CreateObject("ADODB.Connection")
+    conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
+    
+    ' Begin Transaction
+    conn.BeginTrans
+    
+    ' Step 1: Reset all Highest_NART to False
+    sqlFilePath = CurrentProject.Path & "\reset_highest_nart.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
+    
+    ' Step 2: Set Highest_NART to True for the latest version
+    sqlFilePath = CurrentProject.Path & "\update_highest_nart.sql"
+    sql = ReadFile(sqlFilePath)
+    conn.Execute sql
+    
+    ' Commit Transaction
+    conn.CommitTrans
+    
+    ' Close the connection
+    conn.Close
+    Set conn = Nothing
+    
+    MsgBox "Updated Highest NART successfully.", vbInformation
+    Exit Sub
 
