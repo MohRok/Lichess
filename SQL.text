@@ -232,3 +232,16 @@ Sub ExecuteSQLFromFile()
     MsgBox "Updated Highest NART successfully.", vbInformation
     Exit Sub
 
+Function ReadFile(filePath As String) As String
+    Dim fso As Object
+    Dim file As Object
+    Dim text As String
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set file = fso.OpenTextFile(filePath, 1)
+    
+    text = file.ReadAll
+    file.Close
+    
+    ReadFile = text
+End Function
