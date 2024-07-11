@@ -155,9 +155,8 @@ End Sub
 
 
 
-VBA2
-Sub UpdateHighestNART()
-    On Error GoTo ErrorHandler
+VBA JB"
+Sub UpdateHighestJB2()
     Dim conn As Object
     Dim sql As String
     
@@ -165,35 +164,38 @@ Sub UpdateHighestNART()
     Set conn = CreateObject("ADODB.Connection")
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
     
-    ' Step 1: Reset all Highest_NART to False
-    sql = "UPDATE hlftbl_NART_Selection SET Highest_NART = False;"
+    ' Create Temp_Base_Version table
+    sql = "SELECT JB2, Val(Right([JB2], 2)) AS VersionNumber, Left([JB2], Len([JB2]) - 3) AS BaseJB2 INTO Temp_Base_Version FROM tbl_DELSPC;"
     conn.Execute sql
     
-    ' Step 2: Set Highest_NART to True for the latest version
-    sql = "UPDATE hlftbl_NART_Selection AS h " & _
-          "INNER JOIN (SELECT Left([NART_f], Len([NART_f]) - 3) AS BaseNART, MAX(Val(Right([NART_f], 2))) AS MaxVersion " & _
-                      "FROM hlftbl_NART_Selection " & _
-                      "GROUP BY Left([NART_f], Len([NART_f]) - 3)) AS subquery " & _
-          "ON Left(h.[NART_f], Len(h.[NART_f]) - 3) = subquery.BaseNART " & _
-          "AND Val(Right(h.[NART_f], 2)) = subquery.MaxVersion " & _
-          "SET h.Highest_NART = True;"
+    ' Create Temp_Max_Version_Per_Base table
+    sql = "SELECT BaseJB2, MAX(VersionNumber) AS MaxVersion INTO Temp_Max_Version_Per_Base FROM Temp_Base_Version GROUP BY BaseJB2;"
+    conn.Execute sql
+    
+    ' Reset Highest_JB2
+    sql = "UPDATE tbl_DELSPC SET Highest_JB2 = False;"
+    conn.Execute sql
+    
+    ' Update Highest_JB2 field
+    sql = "UPDATE tbl_DELSPC AS t " & _
+          "INNER JOIN (Temp_Base_Version AS bv " & _
+          "INNER JOIN Temp_Max_Version_Per_Base AS mv " & _
+          "ON (bv.BaseJB2 = mv.BaseJB2) AND (bv.VersionNumber = mv.MaxVersion)) " & _
+          "ON t.JB2 = bv.JB2 " & _
+          "SET t.Highest_JB2 = True;"
+    conn.Execute sql
+    
+    ' Drop temporary tables
+    sql = "DROP TABLE Temp_Base_Version;"
+    conn.Execute sql
+    sql = "DROP TABLE Temp_Max_Version_Per_Base;"
     conn.Execute sql
     
     ' Close the connection
     conn.Close
     Set conn = Nothing
     
-    MsgBox "Updated Highest NART successfully.", vbInformation
-    Exit Sub
-
-ErrorHandler:
-    MsgBox "An error occurred: " & Err.Description, vbCritical
-    If Not conn Is Nothing Then
-        If conn.State = 1 Then ' If the connection is open
-            conn.Close
-        End If
-        Set conn = Nothing
-    End If
+    MsgBox "Updated Highest JB2 successfully.", vbInformation
 End Sub
 
 
