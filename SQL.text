@@ -298,4 +298,48 @@ Sub UpdateHighestJB2()
     MsgBox "Updated Highest JB2 successfully.", vbInformation
 End Sub
 
+Predecessor VBA
+
+Sub UpdatePredecessorNART()
+    Dim conn As Object
+    Dim sql As String
+    
+    ' Create a new ADO connection
+    Set conn = CreateObject("ADODB.Connection")
+    conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
+    
+    ' Create Temp_Base_NART table to extract base and version numbers
+    sql = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, Left([NART_f], Len([NART_f]) - 3) AS BaseNART INTO Temp_Base_NART FROM hlftbl_NART_Selection;"
+    conn.Execute sql
+    
+    ' Create Temp_Predecessor_NART table to identify predecessor NARTs
+    sql = "SELECT t1.NART_f, t2.NART_f AS PredecessorNART INTO Temp_Predecessor_NART " & _
+          "FROM Temp_Base_NART AS t1 " & _
+          "INNER JOIN Temp_Base_NART AS t2 " & _
+          "ON t1.BaseNART = t2.BaseNART AND t1.VersionNumber > t2.VersionNumber;"
+    conn.Execute sql
+    
+    ' Reset Predecessor_NART column
+    sql = "UPDATE hlftbl_NART_Selection SET Predecessor_NART = Null;"
+    conn.Execute sql
+    
+    ' Update Predecessor_NART column with identified predecessor NARTs
+    sql = "UPDATE hlftbl_NART_Selection AS h " & _
+          "INNER JOIN Temp_Predecessor_NART AS p " & _
+          "ON h.NART_f = p.NART_f " & _
+          "SET h.Predecessor_NART = p.PredecessorNART;"
+    conn.Execute sql
+    
+    ' Drop temporary tables
+    sql = "DROP TABLE Temp_Base_NART;"
+    conn.Execute sql
+    sql = "DROP TABLE Temp_Predecessor_NART;"
+    conn.Execute sql
+    
+    ' Close the connection
+    conn.Close
+    Set conn = Nothing
+    
+    MsgBox "Updated Predecessor NART successfully.", vbInformation
+End Sub
 
