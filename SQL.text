@@ -335,7 +335,7 @@ Sub UpdatePredecessorNART()
     sql = "UPDATE hlftbl_NART_Selection AS h " & _
           "INNER JOIN Temp_Predecessor_NART AS p " & _
           "ON h.NART_f = p.NART_f " & _
-          "SET h.Predecessor_NART = p.PredecessorNART;"
+          "SET h.Predecessor_NART = True;"
     conn.Execute sql
     
     ' Drop temporary tables
@@ -350,6 +350,8 @@ Sub UpdatePredecessorNART()
     
     MsgBox "Updated Predecessor NART successfully.", vbInformation
 End Sub
+
+
 
 
 
