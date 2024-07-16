@@ -109,9 +109,6 @@ Sub UpdateHighestNART()
     ' Create a new ADO connection
     Set conn = CreateObject("ADODB.Connection")
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
-    
-    
-    
         
   
     ' Create Temp_Base_Version table
@@ -149,6 +146,7 @@ Sub UpdateHighestNART()
     
     MsgBox "Updated Highest NART successfully.", vbInformation
 End Sub
+
 
 
 
