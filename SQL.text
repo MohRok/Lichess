@@ -296,6 +296,8 @@ Sub UpdateHighestJB2()
     MsgBox "Updated Highest JB2 successfully.", vbInformation
 End Sub
 
+
+
 Predecessor VBA
 
 Sub UpdatePredecessorNART()
@@ -305,12 +307,14 @@ Sub UpdatePredecessorNART()
     ' Create a new ADO connection
     Set conn = CreateObject("ADODB.Connection")
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
-        
+    
     ' Create Temp_Base_NART table to extract base and version numbers
-    sql = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, " & _
-          "Left([NART_f], Len([NART_f]) - 3) AS BaseNART " & _
+    ' Ensuring the values are valid
+    sql = "SELECT NART_f, " & _
+          "IIf(IsNumeric(Right([NART_f], 2)), Val(Right([NART_f], 2)), Null) AS VersionNumber, " & _
+          "IIf(IsNumeric(Right([NART_f], 2)), Left([NART_f], Len([NART_f]) - 3), Null) AS BaseNART " & _
           "INTO Temp_Base_NART FROM hlftbl_NART_Selection " & _
-          "WHERE IsNumeric(Right([NART_f], 2)) AND NART_f Is Not Null AND NART_f <> '';"
+          "WHERE NART_f Is Not Null AND NART_f <> '';"
     conn.Execute sql
     
     ' Create Temp_Predecessor_NART table to identify predecessor NARTs
@@ -319,7 +323,8 @@ Sub UpdatePredecessorNART()
           "FROM Temp_Base_NART AS t1 " & _
           "LEFT JOIN Temp_Base_NART AS t2 " & _
           "ON t1.BaseNART = t2.BaseNART " & _
-          "AND t1.VersionNumber = t2.VersionNumber + 1;"
+          "AND t1.VersionNumber = t2.VersionNumber + 1 " & _
+          "WHERE t1.VersionNumber Is Not Null AND t2.VersionNumber Is Not Null;"
     conn.Execute sql
     
     ' Reset Predecessor_NART column
