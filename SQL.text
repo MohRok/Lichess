@@ -275,3 +275,27 @@ Function ReadFile(filePath As String) As String
     ReadFile = text
 End Function
 
+
+
+
+VBA 4
+Sub UpdateHighestJB2()
+    ' Declare a variable to hold the database reference
+    Dim db As DAO.Database
+    
+    ' Set the database reference to the current database
+    Set db = CurrentDb
+    
+    ' Execute the saved queries in the desired order
+    db.Execute "Query_Create_Temp_Base_JB2"
+    db.Execute "Query_Create_Temp_Max_Version_Per_JB2"
+    db.Execute "Query_Reset_Highest_JB2"
+    db.Execute "Query_Update_Highest_JB2"
+    db.Execute "Query_Drop_Temp_Base_JB2"
+    db.Execute "Query_Drop_Temp_Max_Version_Per_JB2"
+    
+    ' Display a message box to confirm completion
+    MsgBox "Updated Highest JB2 successfully.", vbInformation
+End Sub
+
+
