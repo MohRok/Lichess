@@ -313,18 +313,13 @@ Sub UpdatePredecessorNART()
           "WHERE IsNumeric(Right([NART_f], 2)) AND NART_f Is Not Null AND NART_f <> '';"
     conn.Execute sql
     
-    ' Create Temp_Max_Version_Per_Base table to get the highest version number per base NART
-    sql = "SELECT BaseNART, MAX(VersionNumber) AS MaxVersion " & _
-          "INTO Temp_Max_Version_Per_Base " & _
-          "FROM Temp_Base_NART " & _
-          "GROUP BY BaseNART;"
-    conn.Execute sql
-    
     ' Create Temp_Predecessor_NART table to identify predecessor NARTs
-    sql = "SELECT t1.NART_f, t2.NART_f AS PredecessorNART INTO Temp_Predecessor_NART " & _
+    sql = "SELECT t1.NART_f, t2.NART_f AS PredecessorNART " & _
+          "INTO Temp_Predecessor_NART " & _
           "FROM Temp_Base_NART AS t1 " & _
-          "INNER JOIN Temp_Base_NART AS t2 " & _
-          "ON t1.BaseNART = t2.BaseNART AND t1.VersionNumber = t2.VersionNumber + 1;"
+          "LEFT JOIN Temp_Base_NART AS t2 " & _
+          "ON t1.BaseNART = t2.BaseNART " & _
+          "AND t1.VersionNumber = t2.VersionNumber + 1;"
     conn.Execute sql
     
     ' Reset Predecessor_NART column
@@ -341,8 +336,6 @@ Sub UpdatePredecessorNART()
     ' Drop temporary tables
     sql = "DROP TABLE Temp_Base_NART;"
     conn.Execute sql
-    sql = "DROP TABLE Temp_Max_Version_Per_Base;"
-    conn.Execute sql
     sql = "DROP TABLE Temp_Predecessor_NART;"
     conn.Execute sql
     
@@ -352,5 +345,6 @@ Sub UpdatePredecessorNART()
     
     MsgBox "Updated Predecessor NART successfully.", vbInformation
 End Sub
+
 
 
