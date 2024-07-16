@@ -312,7 +312,7 @@ Sub UpdatePredecessorNART()
     sql = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, " & _
           "Left([NART_f], Len([NART_f]) - 3) AS BaseNART " & _
           "INTO Temp_Base_NART FROM hlftbl_NART_Selection " & _
-          "WHERE NART_f Is Not Null AND NART_f <> '' AND IsNumeric(Right([NART_f], 2));"
+          "WHERE IsNumeric(Right([NART_f], 2)) AND NART_f Is Not Null AND NART_f <> '';"
     conn.Execute sql
     
     ' Create Temp_Predecessor_NART table to identify predecessor NARTs
@@ -345,6 +345,7 @@ Sub UpdatePredecessorNART()
     
     MsgBox "Updated Predecessor NART successfully.", vbInformation
 End Sub
+
 
 
 
