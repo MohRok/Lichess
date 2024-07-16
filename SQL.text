@@ -309,7 +309,10 @@ Sub UpdatePredecessorNART()
     conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
     
     ' Create Temp_Base_NART table to extract base and version numbers
-    sql = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, Left([NART_f], Len([NART_f]) - 3) AS BaseNART INTO Temp_Base_NART FROM hlftbl_NART_Selection WHERE NART_f Is Not Null AND NART_f <> '';"
+    sql = "SELECT NART_f, Val(Right([NART_f], 2)) AS VersionNumber, " & _
+          "Left([NART_f], Len([NART_f]) - 3) AS BaseNART " & _
+          "INTO Temp_Base_NART FROM hlftbl_NART_Selection " & _
+          "WHERE NART_f Is Not Null AND NART_f <> '' AND IsNumeric(Right([NART_f], 2));"
     conn.Execute sql
     
     ' Create Temp_Predecessor_NART table to identify predecessor NARTs
@@ -342,5 +345,6 @@ Sub UpdatePredecessorNART()
     
     MsgBox "Updated Predecessor NART successfully.", vbInformation
 End Sub
+
 
 
