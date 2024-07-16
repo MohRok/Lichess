@@ -352,6 +352,56 @@ Sub UpdatePredecessorNART()
 End Sub
 
 
+Sub UpdatePredecessorJB2()
+    Dim conn As Object
+    Dim sql As String
+    
+    ' Create a new ADO connection
+    Set conn = CreateObject("ADODB.Connection")
+    conn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & CurrentProject.Path & "\" & CurrentProject.Name
+    
+    ' Create Temp_Base_JB2 table to extract base and version numbers
+    ' Ensuring the values are valid
+    sql = "SELECT JB2, " & _
+          "IIf(IsNumeric(Right([JB2], 2)), Val(Right([JB2], 2)), Null) AS VersionNumber, " & _
+          "IIf(IsNumeric(Right([JB2], 2)), Left([JB2], Len([JB2]) - 3), Null) AS BaseJB2 " & _
+          "INTO Temp_Base_JB2 FROM tbl_DELSPC " & _
+          "WHERE JB2 Is Not Null AND JB2 <> '';"
+    conn.Execute sql
+    
+    ' Create Temp_Predecessor_JB2 table to identify predecessor JB2s
+    sql = "SELECT t1.JB2, t2.JB2 AS PredecessorJB2 " & _
+          "INTO Temp_Predecessor_JB2 " & _
+          "FROM Temp_Base_JB2 AS t1 " & _
+          "LEFT JOIN Temp_Base_JB2 AS t2 " & _
+          "ON t1.BaseJB2 = t2.BaseJB2 " & _
+          "AND t1.VersionNumber = t2.VersionNumber + 1 " & _
+          "WHERE t1.VersionNumber Is Not Null AND t2.VersionNumber Is Not Null;"
+    conn.Execute sql
+    
+    ' Reset Predecessor_JB2 column
+    sql = "UPDATE tbl_DELSPC SET Predecessor_JB2 = Null;"
+    conn.Execute sql
+    
+    ' Update Predecessor_JB2 column with identified predecessor JB2s
+    sql = "UPDATE tbl_DELSPC AS h " & _
+          "INNER JOIN Temp_Predecessor_JB2 AS p " & _
+          "ON h.JB2 = p.JB2 " & _
+          "SET h.Predecessor_JB2 = True;"
+    conn.Execute sql
+    
+    ' Drop temporary tables
+    sql = "DROP TABLE Temp_Base_JB2;"
+    conn.Execute sql
+    sql = "DROP TABLE Temp_Predecessor_JB2;"
+    conn.Execute sql
+    
+    ' Close the connection
+    conn.Close
+    Set conn = Nothing
+    
+    MsgBox "Updated Predecessor JB2 successfully.", vbInformation
+End Sub
 
 
 
