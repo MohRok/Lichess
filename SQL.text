@@ -313,17 +313,40 @@ Sub UpdatePredecessorNART()
           "Left([NART_f], Len([NART_f]) - 3) AS BaseNART " & _
           "INTO Temp_Base_NART FROM hlftbl_NART_Selection " & _
           "WHERE IsNumeric(Right([NART_f], 2)) AND NART_f Is Not Null AND NART_f <> '';"
+    Debug.Print "Executing SQL for Temp_Base_NART: " & sql
     conn.Execute sql
+    
+    ' Verify the content of Temp_Base_NART
+    sql = "SELECT * FROM Temp_Base_NART;"
+    Debug.Print "Verifying Temp_Base_NART content: " & sql
+    Set rs = conn.Execute(sql)
+    Do While Not rs.EOF
+        Debug.Print "NART_f: " & rs("NART_f") & ", VersionNumber: " & rs("VersionNumber") & ", BaseNART: " & rs("BaseNART")
+        rs.MoveNext
+    Loop
+    rs.Close
     
     ' Create Temp_Predecessor_NART table to identify predecessor NARTs
     sql = "SELECT t1.NART_f, t2.NART_f AS PredecessorNART INTO Temp_Predecessor_NART " & _
           "FROM Temp_Base_NART AS t1 " & _
           "INNER JOIN Temp_Base_NART AS t2 " & _
           "ON t1.BaseNART = t2.BaseNART AND t1.VersionNumber > t2.VersionNumber;"
+    Debug.Print "Executing SQL for Temp_Predecessor_NART: " & sql
     conn.Execute sql
+    
+    ' Verify the content of Temp_Predecessor_NART
+    sql = "SELECT * FROM Temp_Predecessor_NART;"
+    Debug.Print "Verifying Temp_Predecessor_NART content: " & sql
+    Set rs = conn.Execute(sql)
+    Do While Not rs.EOF
+        Debug.Print "NART_f: " & rs("NART_f") & ", PredecessorNART: " & rs("PredecessorNART")
+        rs.MoveNext
+    Loop
+    rs.Close
     
     ' Reset Predecessor_NART column
     sql = "UPDATE hlftbl_NART_Selection SET Predecessor_NART = Null;"
+    Debug.Print "Executing SQL to reset Predecessor_NART: " & sql
     conn.Execute sql
     
     ' Update Predecessor_NART column with identified predecessor NARTs
@@ -331,12 +354,15 @@ Sub UpdatePredecessorNART()
           "INNER JOIN Temp_Predecessor_NART AS p " & _
           "ON h.NART_f = p.NART_f " & _
           "SET h.Predecessor_NART = p.PredecessorNART;"
+    Debug.Print "Executing SQL to update Predecessor_NART: " & sql
     conn.Execute sql
     
     ' Drop temporary tables
     sql = "DROP TABLE Temp_Base_NART;"
+    Debug.Print "Dropping Temp_Base_NART: " & sql
     conn.Execute sql
     sql = "DROP TABLE Temp_Predecessor_NART;"
+    Debug.Print "Dropping Temp_Predecessor_NART: " & sql
     conn.Execute sql
     
     ' Close the connection
@@ -345,7 +371,4 @@ Sub UpdatePredecessorNART()
     
     MsgBox "Updated Predecessor NART successfully.", vbInformation
 End Sub
-
-
-
 
